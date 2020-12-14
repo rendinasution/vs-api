@@ -11,13 +11,15 @@ let config = require('./config')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-
+var activitiesRouter = require('./routes/activities');
 
 const mongoose = require('mongoose');
 const { networkInterfaces } = require('os');
 
 const url = config.mongoUrl
-const connect = mongoose.connect(url)
+
+//added useNewUrlParser:true to prevent warning on newer mongoDB version
+const connect = mongoose.connect(url,{useNewUrlParser:true})
 
 connect.then((db) => {
   console.log('Connected correctly to server')
@@ -45,6 +47,7 @@ app.use(passport.initialize())
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/activities', activitiesRouter);
 
 app.use(express.static(path.join(__dirname, 'public')));
 

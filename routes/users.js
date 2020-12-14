@@ -59,6 +59,26 @@ router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
 });
 
+router.get('/getUser',cors.corsWithOptions, authenticate.verifyUser, function(req, res, next) {
+  var token = authenticate.getToken({_id: req.user._id})
+  
+  User.findOne({'username':req.body.username}).then((user) => {
+    if(!user) {
+      res.statusCode = 500
+      msg = 'user not found'
+      success = false
+    } else {
+      res.StatusCode = 200
+      msg = 'ok'
+      success = true
+      if(token._id !== user._id) authenticate.verifyAdmin
+    }
+
+    res.setHeader('Content-Type', 'application/json')
+    res.json({success: success, token: token, msg: msg, userData: user})
+  }).catch((err) => next(err))
+})
+
 router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {
   if (req.user) {
     var token = authenticate.getToken({_id: req.user._id});
