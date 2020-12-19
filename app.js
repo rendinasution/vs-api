@@ -12,6 +12,7 @@ let config = require('./config')
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var activitiesRouter = require('./routes/activityRouter');
+const flash = require('connect-flash');
 
 const mongoose = require('mongoose');
 const { networkInterfaces } = require('os');
@@ -44,7 +45,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(passport.initialize())
+app.use( session({ secret: 'secret', resave: true, saveUninitialized: true }) );
 
+app.use(flash());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/activities', activitiesRouter);
