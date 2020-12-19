@@ -19,7 +19,7 @@ router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.veri
 
 router.get('/search', cors.corsWithOptions, authenticate.verifyUser, function(req, res, next) {
   input = req.body.input;
-  User.find({ $or: [{username: new RegExp(input, 'i')}, {firstname: new RegExp(input, 'i')}, {lastname: new RegExp(input, 'i')}  ]}).then((users) => {
+  User.find({ $or: [{username: new RegExp(input, 'i')}, {firstname: new RegExp(input, 'i')}, {lastname: new RegExp(input, 'i')}, {nik: new RegExp(input, 'i')} ]}).then((users) => {
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
       res.json({ status: res.statusCode, message: "Successfully to Find Users!", result: users })

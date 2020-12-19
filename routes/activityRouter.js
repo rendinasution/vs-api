@@ -6,40 +6,53 @@ const mongoose = require('mongoose');
 const cors = require('./cors');
 
 const Logs = require('../models/logs');
+const { aggregate } = require('../models/logs');
 
 const activityRouter=express.Router();
 activityRouter.use(bodyParser.json());
 
 var datetime = new Date();
-var currentDate = datetime.getDate();
+var currentDate = datetime.toISOString().slice(0,10);
 
 
 activityRouter.route('/checkin')
 .post(authenticate.verifyUser, (req, res, next) => {
     req.body.user = req.user._id;
     req.body.check_in = true;
-    Logs.findOne({user: req.body.user})
+    Logs.aggregate(
+        [
+            {
+                $project:
+                    {
+                        item: 1,
+                        dateCreatedAt: { $substr: [ "$createdAt", 0, 10]},
+                        timeCreatedAt: { $substr: [ "$createdAt", 12, 19]}
+                    }
+                }
+        ]
+    )
+    Logs.findOne({user: req.body.user, dateCreatedAt: currentDate})
     .then((logs) => {
-        createdDate = logs.createdAt.getDate();
+        console.log(logs);
         if(logs) {
-            if(logs.check_in == true && createdDate == currentDate) {
+            if(logs.check_in == true) {
                 res.statusCode = 409;
                 res.json({status: res.statusCode, message: "You already checked in!!", result: logs})
             } else {
                 Logs.create({user: req.body.user, check_in: req.body.check_in, condition: req.body.condition, workplace: req.body.workplace, coordinate: req.body.coordinate})
                 .then((logs) => {
-                  res.statusCode = 200;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.json({status: res.statusCode, message: "Check-in Successfull!", result: logs})
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json({status: res.statusCode, message: "Check-in Successfull!", result: logs})
                 }, (err) => { next(err) })
                 .catch((err) => { next(err)})
             }
         } else {
             Logs.create({user: req.body.user, check_in: req.body.check_in, condition: req.body.condition, workplace: req.body.workplace, coordinate: req.body.coordinate})
             .then((logs) => {
-              res.statusCode = 200;
-              res.setHeader('Content-Type', 'application/json');
-              res.json({status: res.statusCode, message: "Check-in Successfull!", result: logs})
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json({status: res.statusCode, message: "Check-in Successfull!", result: logs})
             }, (err) => { next(err) })
             .catch((err) => { next(err)})
         }
