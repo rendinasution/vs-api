@@ -6,6 +6,7 @@ var authenticate = require('../authenticate');
 router.use(bodyParser.json());
 var passport = require('passport');
 const cors = require('./cors');
+const cors2 = require('cors')
 
 /* GET users listing. */
 router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
@@ -56,6 +57,9 @@ router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req
   var token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
+  //res.setHeader('Content-Type', 'application/x-www-form-urlencoded');
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
 });
 

@@ -11,7 +11,7 @@ let config = require('./config')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-var activitiesRouter = require('./routes/activities');
+var activitiesRouter = require('./routes/activityRouter');
 
 const mongoose = require('mongoose');
 const { networkInterfaces } = require('os');
@@ -61,6 +61,8 @@ app.use(function(err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 
   // render the error page
   res.status(err.status || 500);
