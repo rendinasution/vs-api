@@ -17,6 +17,15 @@ router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.veri
 }).catch((err) => next(err));
 });
 
+router.get('/search', cors.corsWithOptions, authenticate.verifyUser, function(req, res, next) {
+  input = req.body.input;
+  User.find({ $or: [{username: new RegExp(input, 'i')}, {firstname: new RegExp(input, 'i')}, {lastname: new RegExp(input, 'i')}  ]}).then((users) => {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({ status: res.statusCode, message: "Successfully to Find Users!", result: users })
+    }).catch((err) => next(err));
+});
+
 router.post('/signup', cors.corsWithOptions, (req, res) => {
   User.register(new User({firstname: req.body.firstname, lastname: req.body.lastname, username: req.body.username, nik: req.body.nik, coordinate: req.body.coordinate}),
   req.body.password,(err,user)=>{

@@ -51,7 +51,7 @@ activityRouter.route('/checkout')
 .post(authenticate.verifyUser, (req, res, next) => {
     req.body.user = req.user._id;
     req.body.check_in = false;
-    Logs.findOne({user: req.body.user, createdAt:})
+    Logs.findOne({user: req.body.user, createdAt: currentDate})
     .then((logs) => {
         createdDate = logs.createdAt.getDate();
         if(logs){
