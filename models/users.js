@@ -5,19 +5,27 @@ var passportLocalMongoose = require('passport-local-mongoose');
 var User = new Schema({
     firstname: {
         type: String,
-        default: ''
+        default: '',
+        required: true
     },
     lastname: {
         type: String,
-        default: ''
+        default: '',
+        required: true
     },
     username: {
         type: String,
-        default: ''
+        default: '',
+        required: true
     },
     nik: {
         type: Number,
-        default: 0
+        default: 0,
+        required: true
+    },
+    coordinate: {
+        type: String,
+        default: null
     },
     facebookId: String,
     admin:   {

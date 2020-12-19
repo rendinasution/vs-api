@@ -11,6 +11,7 @@ let config = require('./config')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var activitiesRouter = require('./routes/activityRouter');
 
 
 const mongoose = require('mongoose');
@@ -45,6 +46,7 @@ app.use(passport.initialize())
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/activities', activitiesRouter)
 
 app.use(express.static(path.join(__dirname, 'public')));
 

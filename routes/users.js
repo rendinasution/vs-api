@@ -13,51 +13,41 @@ router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.veri
   User.find({}).then((users) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.json({ users: users })
+    res.json({ status: res.statusCode, message: "Successfully to Get All User!", result: users })
 }).catch((err) => next(err));
 });
 
-router.post('/signup', cors.corsWithOptions, (req, res, next) => {
-  process.on('uncaughtException', function (err) {
-    console.log(err);
-  }); 
-  User.register(new User({username: req.body.username}),
+router.post('/signup', cors.corsWithOptions, (req, res) => {
+  User.register(new User({firstname: req.body.firstname, lastname: req.body.lastname, username: req.body.username, nik: req.body.nik, coordinate: req.body.coordinate}),
   req.body.password,(err,user)=>{
     if(err) {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'application/json');
-      res.json({err: err});
+      res.json({status: res.statusCode, message: err.message, result: [] });
     }
     else {
-      if (req.body.firstname)
-        user.firstname = req.body.firstname;
-      if (req.body.lastname)
-        user.lastname = req.body.lastname;
-      if (req.body.nik)
-        user.nik = req.body.nik;
       user.save((err, user) => {
       if (err) {
-          res.statusCode = 500;
-          res.setHeader('Content-Type', 'application/json');
-          res.json({err: err});
-          return ;
-        }
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({status: res.statusCode, message: err.message, result: [] });
+        return ;
+      }
       passport.authenticate('local')(req, res, () => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.json({success: true, status: 'Registration Successful!'});
+        res.json({status: res.statusCode, message: "Registration Successful!", result: user });
+        });
       });
-    });
-  }
+    }
   });
 });
 
-router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req, res) => {
-
-  var token = authenticate.getToken({_id: req.user._id});
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.json({success: true, token: token, status: 'You are successfully logged in!'});
+router.post('/login', cors.corsWithOptions, passport.authenticate('local', { failureFlash: 'Invalid username or password.' }), (req, res) => {
+    var token = authenticate.getToken({_id: req.user._id});
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.json({status: res.statusCode, message: "You are successfully logged in!", result: token});
 });
 
 router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {
@@ -65,74 +55,8 @@ router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res
     var token = authenticate.getToken({_id: req.user._id});
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.json({success: true, token: token, status: 'You are successfully logged in!'});
+    res.json({status: res.statusCode, message: "You are successfully logged in!", result: token});
   }
 });
-
-router.post('/checkin', cors.corsWithOptions, authenticate.verifyUser, authenticate.normalUser, (req, res, next) => {
-
-  req.body.user = req.user._id
-  req.body.check_in = true
-  Logs.findOne({user: req.body.user})
-  .then((logs) => {
-      console.log(logs)
-      if(logs) {
-          if(logs.check_in == true) {
-              res.statusCode = 409
-              res.end('You already checked in!')
-          } else {
-              Logs.create({user: req.body.user, check_in: req.body.check_in})
-              .then((logs) => {
-                res.statusCode = 200
-                res.setHeader('Content-Type', 'application/json')
-                res.json(logs)
-              }, (err) => { next(err) })
-              .catch((err) => { next(err)})
-          }
-      } else {
-          Logs.create({user: req.body.user, check_in: req.body.check_in})
-          .then((logs) => {
-            res.statusCode = 200
-            res.setHeader('Content-Type', 'application/json')
-            res.json(logs)
-          }, (err) => { next(err) })
-          .catch((err) => { next(err)})
-      }
-  }, (err) => {next(err)})
-  .catch((err) => {next(err)})
-})
-
-router.post('/checkout', cors.corsWithOptions, authenticate.verifyUser, authenticate.normalUser, (req, res, next) => {
-
-  req.body.user = req.user._id
-  req.body.check_in = false
-  Logs.findOne({user: req.body.user})
-  .then((logs) => {
-      console.log(logs)
-      if(logs) {
-          if(logs.check_in == false) {
-              res.statusCode = 409
-              res.end('You already checked in!')
-          } else {
-              Logs.create({user: req.body.user, check_in: req.body.check_in})
-              .then((logs) => {
-                res.statusCode = 200
-                res.setHeader('Content-Type', 'application/json')
-                res.json(logs)
-              }, (err) => { next(err) })
-              .catch((err) => { next(err)})
-          }
-      } else {
-          Logs.create({user: req.body.user, check_in: req.body.check_in})
-          .then((logs) => {
-            res.statusCode = 200
-            res.setHeader('Content-Type', 'application/json')
-            res.json(logs)
-          }, (err) => { next(err) })
-          .catch((err) => { next(err)})
-      }
-  }, (err) => {next(err)})
-  .catch((err) => {next(err)})
-})
 
 module.exports = router;
