@@ -7,6 +7,7 @@ var authenticate = require('../authenticate');
 router.use(bodyParser.json());
 var passport = require('passport');
 const cors = require('./cors');
+const cors2 = require('cors')
 
 /* GET users listing. */
 router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
@@ -53,11 +54,35 @@ router.post('/signup', cors.corsWithOptions, (req, res) => {
 });
 
 router.post('/login', cors.corsWithOptions, passport.authenticate('local', { failureFlash: 'Invalid username or password.' }), (req, res) => {
-    var token = authenticate.getToken({_id: req.user._id});
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.json({status: res.statusCode, message: "You are successfully logged in!", result: token});
+
+  var token = authenticate.getToken({_id: req.user._id});
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  //res.setHeader('Content-Type', 'application/x-www-form-urlencoded');
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.json({status: res.statusCode, message: "You are successfully logged in!", result: token});
 });
+
+router.get('/getUser',cors.corsWithOptions, authenticate.verifyUser, function(req, res, next) {
+  var token = authenticate.getToken({_id: req.user._id})
+  
+  User.findOne({'username':req.body.username}).then((user) => {
+    if(!user) {
+      res.statusCode = 500
+      msg = 'user not found'
+      success = false
+    } else {
+      res.StatusCode = 200
+      msg = 'ok'
+      success = true
+      if(token._id !== user._id) authenticate.verifyAdmin
+    }
+
+    res.setHeader('Content-Type', 'application/json')
+    res.json({success: success, token: token, msg: msg, userData: user})
+  }).catch((err) => next(err))
+})
 
 router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {
   if (req.user) {

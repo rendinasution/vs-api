@@ -12,13 +12,15 @@ let config = require('./config')
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var activitiesRouter = require('./routes/activityRouter');
-
+const flash = require('connect-flash');
 
 const mongoose = require('mongoose');
 const { networkInterfaces } = require('os');
 
 const url = config.mongoUrl
-const connect = mongoose.connect(url)
+
+//added useNewUrlParser:true to prevent warning on newer mongoDB version
+const connect = mongoose.connect(url,{useNewUrlParser:true})
 
 connect.then((db) => {
   console.log('Connected correctly to server')
@@ -43,7 +45,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(passport.initialize())
+app.use( session({ secret: 'secret', resave: true, saveUninitialized: true }) );
 
+app.use(flash());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/activities', activitiesRouter)
@@ -60,6 +64,8 @@ app.use(function(err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 
   // render the error page
   res.status(err.status || 500);
