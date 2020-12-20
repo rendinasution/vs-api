@@ -1,13 +1,17 @@
 var express = require('express');
 var router = express.Router();
 const bodyParser = require('body-parser');
+const proxy = require("http-proxy-middleware")
 var User = require('../models/users');
 var Logs = require('../models/logs');
 var authenticate = require('../authenticate');
 router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: false }));
 var passport = require('passport');
 const cors = require('./cors');
 const cors2 = require('cors')
+
+router.use(cors2())
 
 /* GET users listing. */
 router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
@@ -54,14 +58,9 @@ router.post('/signup', cors.corsWithOptions, (req, res) => {
 });
 
 router.post('/login', cors.corsWithOptions, passport.authenticate('local', { failureFlash: 'Invalid username or password.' }), (req, res) => {
-
   var token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  //res.setHeader('Content-Type', 'application/x-www-form-urlencoded');
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.json({status: res.statusCode, message: "You are successfully logged in!", result: token});
+  res.json({status: res.statusCode, message: "You are successfully logged in!", result: {token: token, username: req.body.username,user_id: req.user._id }});
 });
 
 router.get('/getUser',cors.corsWithOptions, authenticate.verifyUser, function(req, res, next) {
@@ -93,4 +92,4 @@ router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res
   }
 });
 
-module.exports = router;
+module.exports = router

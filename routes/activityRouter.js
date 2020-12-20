@@ -8,6 +8,10 @@ const cors = require('./cors');
 const Logs = require('../models/logs');
 const { aggregate } = require('../models/logs');
 
+const Activity = require('../models/activities')
+const Comment = require('../models/comments')
+const User = require('../models/users');
+
 const activityRouter=express.Router();
 activityRouter.use(bodyParser.json());
 
@@ -15,7 +19,7 @@ var datetime = new Date();
 var currentDate = datetime.toISOString().slice(0,10);
 
 
-activityRouter.route('/checkin')
+activityRouter.route('/checkin/:check?')
 .post(authenticate.verifyUser, (req, res, next) => {
     req.body.user = req.user._id;
     req.body.check_in = true;
@@ -50,11 +54,17 @@ activityRouter.route('/checkin')
         }
     ])
     .then((logs) => {
+        just_check = false
+        if(req.params.check==1) just_check = true
+        responseStatus = false
+
         if(logs[0] && logs[0].dateCreatedAt) {
             if(logs[0].check_in == true) {
-                res.statusCode = 409;
+                res.statusCode = responseStatus = 409;
                 res.json({status: res.statusCode, message: "You already checked in!!", result: logs})
             } else {
+                if(just_check) responseStatus = 200
+                else
                 Logs.create({user: req.body.user, check_in: req.body.check_in, condition: req.body.condition, workplace: req.body.workplace, coordinate: req.body.coordinate})
                 .then((logs) => {
                     res.statusCode = 200;
@@ -64,13 +74,20 @@ activityRouter.route('/checkin')
                 .catch((err) => { next(err)})
             }
         } else {
+            if(just_check) responseStatus = 200
+            else
             Logs.create({user: req.body.user, check_in: req.body.check_in, condition: req.body.condition, workplace: req.body.workplace, coordinate: req.body.coordinate})
             .then((logs) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json({status: res.statusCode, message: "Check-in Successfull!", result: logs})
+              res.statusCode = responseStatus = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.json({status: res.statusCode, message: "Check-in Successfull!", result: logs})
             }, (err) => { next(err) })
             .catch((err) => { next(err)})
+        }
+        if(just_check){
+            res.statusCode = responseStatus;
+            res.setHeader('Content-Type', 'application/json');
+            res.json({status: responseStatus, message: "isCheckin", result: logs})
         }
     }, (err) => {next(err)})
     .catch((err) => {next(err)})
@@ -174,7 +191,7 @@ activityRouter.get('/:username?', cors.corsWithOptions, authenticate.verifyUser,
         if(!user){
             res.json({success: false, token: token, status: 'Username not found' })
         } else {
-            Activity.find({user: user._id}).populate('user').then((activities)=>{
+            Activity.find({user: user._id}).sort('-createdAt').populate('user').then((activities)=>{
                 if(activities){
                     res.json({success: true, token: token, status: 'ok', activities: activities })
                 } else {
