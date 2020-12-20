@@ -48,15 +48,9 @@ app.use(passport.initialize())
 app.use( session({ secret: 'secret', resave: true, saveUninitialized: true }) );
 
 app.use(flash());
-<<<<<<< HEAD
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/activities', activitiesRouter)
-=======
 app.use('/api', indexRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/activities', activitiesRouter);
->>>>>>> 85cfcb22841897a7efca32d2521a827e931bc477
 
 app.use(express.static(path.join(__dirname, 'public')));
 
