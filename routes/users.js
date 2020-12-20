@@ -1,12 +1,16 @@
 var express = require('express');
 var router = express.Router();
 const bodyParser = require('body-parser');
+const proxy = require("http-proxy-middleware")
 var User = require('../models/users');
 var authenticate = require('../authenticate');
 router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: false }));
 var passport = require('passport');
 const cors = require('./cors');
 const cors2 = require('cors')
+
+router.use(cors2())
 
 /* GET users listing. */
 router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
@@ -15,6 +19,15 @@ router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.veri
     res.setHeader('Content-Type', 'application/json');
     res.json({ status: res.statusCode, message: "Successfully to Get All User!", result: users })
 }).catch((err) => next(err));
+});
+
+router.get('/search', cors.corsWithOptions, authenticate.verifyUser, function(req, res, next) {
+  input = req.body.input;
+  User.find({ $or: [{username: new RegExp(input, 'i')}, {firstname: new RegExp(input, 'i')}, {lastname: new RegExp(input, 'i')}, {nik: new RegExp(input, 'i')} ]}).then((users) => {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({ status: res.statusCode, message: "Successfully to Find Users!", result: users })
+    }).catch((err) => next(err));
 });
 
 router.post('/signup', cors.corsWithOptions, (req, res) => {
@@ -50,14 +63,9 @@ router.post('/signup', cors.corsWithOptions, (req, res) => {
 });
 
 router.post('/login', cors.corsWithOptions, passport.authenticate('local', { failureFlash: 'Invalid username or password.' }), (req, res) => {
-
   var token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  //res.setHeader('Content-Type', 'application/x-www-form-urlencoded');
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.json({status: res.statusCode, message: "You are successfully logged in!", result: token});
+  res.json({status: res.statusCode, message: "You are successfully logged in!", result: {token: token, username: req.body.username,user_id: req.user._id }});
 });
 
 router.get('/getUser',cors.corsWithOptions, authenticate.verifyUser, function(req, res, next) {
@@ -89,4 +97,4 @@ router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res
   }
 });
 
-module.exports = router;
+module.exports = router

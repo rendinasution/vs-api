@@ -6,6 +6,8 @@ const mongoose = require('mongoose');
 const cors = require('./cors');
 
 const Logs = require('../models/logs');
+const { aggregate } = require('../models/logs');
+
 const Activity = require('../models/activities')
 const Comment = require('../models/comments')
 const User = require('../models/users');
@@ -14,7 +16,7 @@ const activityRouter=express.Router();
 activityRouter.use(bodyParser.json());
 
 var datetime = new Date();
-var currentDate = datetime.getDate();
+var currentDate = datetime.toISOString().slice(0,10);
 
 /* var express = require('express')
 var router = express.Router()
@@ -24,18 +26,52 @@ var authenticate = require('../authenticate')
 router.use(bodyParser.json())
 const cors = require('./cors') */
 
-activityRouter.route('/checkin')
+activityRouter.route('/checkin/:check?')
 .post(authenticate.verifyUser, (req, res, next) => {
     req.body.user = req.user._id;
     req.body.check_in = true;
-    Logs.findOne({user: req.body.user})
+    Logs.aggregate([
+        {
+            $match:
+            {
+                user: req.body.user
+            }
+        },
+        {
+            $project:
+            {
+                user: 1,
+                check_in: 1,
+                condition: 1,
+                workplace: 1,
+                coordinate: 1,
+                dateCreatedAt: { $substr: [ "$createdAt", 0, 10]},
+                timeCreatedAt: { $substr: [ "$createdAt", 12, 19]},
+
+            }
+        },
+        {
+            $match:
+            {
+                dateCreatedAt: currentDate
+            }
+        },
+        {
+            $limit: 1
+        }
+    ])
     .then((logs) => {
-        createdDate = logs.createdAt.getDate();
-        if(logs) {
-            if(logs.check_in == true && createdDate == currentDate) {
-                res.statusCode = 409;
+        just_check = false
+        if(req.params.check==1) just_check = true
+        responseStatus = false
+
+        if(logs[0] && logs[0].dateCreatedAt) {
+            if(logs[0].check_in == true) {
+                res.statusCode = responseStatus = 409;
                 res.json({status: res.statusCode, message: "You already checked in!!", result: logs})
             } else {
+                if(just_check) responseStatus = 200
+                else
                 Logs.create({user: req.body.user, check_in: req.body.check_in, condition: req.body.condition, workplace: req.body.workplace, coordinate: req.body.coordinate})
                 .then((logs) => {
                   res.statusCode = 200;
@@ -45,13 +81,20 @@ activityRouter.route('/checkin')
                 .catch((err) => { next(err)})
             }
         } else {
+            if(just_check) responseStatus = 200
+            else
             Logs.create({user: req.body.user, check_in: req.body.check_in, condition: req.body.condition, workplace: req.body.workplace, coordinate: req.body.coordinate})
             .then((logs) => {
-              res.statusCode = 200;
+              res.statusCode = responseStatus = 200;
               res.setHeader('Content-Type', 'application/json');
               res.json({status: res.statusCode, message: "Check-in Successfull!", result: logs})
             }, (err) => { next(err) })
             .catch((err) => { next(err)})
+        }
+        if(just_check){
+            res.statusCode = responseStatus;
+            res.setHeader('Content-Type', 'application/json');
+            res.json({status: responseStatus, message: "isCheckin", result: logs})
         }
     }, (err) => {next(err)})
     .catch((err) => {next(err)})
@@ -61,35 +104,60 @@ activityRouter.route('/checkout')
 .post(authenticate.verifyUser, (req, res, next) => {
     req.body.user = req.user._id;
     req.body.check_in = false;
-    var start = new Date();
-    start.setHours(0,0,0,0);
+    Logs.aggregate([
+        {
+            $match:
+            {
+                user: req.body.user
+            }
+        },
+        {
+            $project:
+            {
+                user: 1,
+                check_in: 1,
+                condition: 1,
+                workplace: 1,
+                coordinate: 1,
+                dateCreatedAt: { $substr: [ "$createdAt", 0, 10]},
+                timeCreatedAt: { $substr: [ "$createdAt", 12, 19]},
 
-    var end = new Date();
-    end.setHours(23,59,59,999);
-
-    Logs.findOne({user: req.body.user, createdAt:{$gte: start, $lt: end}})
+            }
+        },
+        {
+            $match:
+            {
+                dateCreatedAt: currentDate,
+                check_in: false
+            }
+        },
+        {
+            $limit: 1
+        }
+    ])
     .then((logs) => {
-        createdDate = logs.createdAt.getDate();
-        if(logs){
-            console.log(logs.check_in);
-            if(logs.check_in == false) {
+        if(logs[0] && logs[0].dateCreatedAt) {
+            if(logs[0].check_in == false) {
                 res.statusCode = 409;
-                res.json({status: res.statusCode, message: "You already checked out!", result: []});
-            } else if(logs.check_in == true && createdDate == currentDate){
-                console.log("1");
+                res.json({status: res.statusCode, message: "You already checked out!!", result: logs})
+            } else {
                 Logs.create({user: req.body.user, check_in: req.body.check_in, condition: req.body.condition, workplace: req.body.workplace, coordinate: req.body.coordinate})
                 .then((logs) => {
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
-                    res.json({status: res.statusCode, message: "Check Out Successfull!", result: logs})
+                    res.json({status: res.statusCode, message: "Check-Out Successfull!", result: logs})
                 }, (err) => { next(err) })
                 .catch((err) => { next(err)})
             }
+        } else {
+            Logs.create({user: req.body.user, check_in: req.body.check_in, condition: req.body.condition, workplace: req.body.workplace, coordinate: req.body.coordinate})
+            .then((logs) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json({status: res.statusCode, message: "Check-out Successfull!", result: logs})
+            }, (err) => { next(err) })
+            .catch((err) => { next(err)})
         }
-        else {
-            res.statusCode = 404;
-            res.json({status: res.statusCode, message: "You are never checked in!", result: []});
-            }
     }, (err) => {next(err)})
     .catch((err) => {next(err)})
 });
@@ -130,7 +198,7 @@ activityRouter.get('/:username?', cors.corsWithOptions, authenticate.verifyUser,
         if(!user){
             res.json({success: false, token: token, status: 'Username not found' })
         } else {
-            Activity.find({user: user._id}).populate('user').then((activities)=>{
+            Activity.find({user: user._id}).sort('-createdAt').populate('user').then((activities)=>{
                 if(activities){
                     res.json({success: true, token: token, status: 'ok', activities: activities })
                 } else {

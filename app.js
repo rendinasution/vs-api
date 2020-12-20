@@ -48,9 +48,9 @@ app.use(passport.initialize())
 app.use( session({ secret: 'secret', resave: true, saveUninitialized: true }) );
 
 app.use(flash());
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/activities', activitiesRouter);
+app.use('/api', indexRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/activities', activitiesRouter);
 
 app.use(express.static(path.join(__dirname, 'public')));
 

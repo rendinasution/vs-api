@@ -25,8 +25,7 @@ var Log = new Schema({
     },
     coordinate: {
         type: String,
-        default: null,
-        required: true
+        default: null
     }
 },  {
         timestamps: true

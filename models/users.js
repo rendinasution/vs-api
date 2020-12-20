@@ -19,7 +19,7 @@ var User = new Schema({
         required: true
     },
     nik: {
-        type: Number,
+        type: String,
         default: 0,
         required: true
     },
